@@ -8,11 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
-COPY pyproject.toml ./
-RUN uv sync --no-dev --no-install-project 2>/dev/null || uv pip install --system -r pyproject.toml
+COPY pyproject.toml uv.lock ./
+RUN uv pip install --system -r pyproject.toml
 COPY app ./app
 
-ENV DATA_DIR=/data PORT=8000
-VOLUME ["/data"]
+ENV PORT=8000
 EXPOSE 8000
-CMD ["sh", "-c", "uv run --no-sync uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]

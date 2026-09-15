@@ -20,10 +20,12 @@ class Settings(BaseSettings):
     feedback_language: str = "auto"  # auto | de | en
 
     # --- server ---
-    data_dir: Path = Path("./data")
     frontend_origin: str = "http://localhost:3000"
     max_upload_mb: int = 200
     render_slides: bool = True
+    # Nothing is written to disk beyond a temp dir that is deleted after grading.
+    # Finished reports stay in memory for this many hours for download (0 = until restart).
+    report_retention_hours: float = 1
 
     # --- grading context (swap these to reuse the app for another case) ---
     rubric_path: Path = Path(__file__).parent / "rubrics" / "meditec_pitch.yaml"

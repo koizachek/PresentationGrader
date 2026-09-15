@@ -15,6 +15,13 @@ Frontend auf Vercel, Backend auf Railway.
    oder Englisch, beim Upload wählbar oder automatisch nach der Abgabe.
 4. Download der Bewertung als `.docx`, Markdown oder JSON. Kein Login.
 
+Nichts wird gespeichert: Die Abgabe und alle hochgeladenen Dateien werden in
+einem temporären Verzeichnis verarbeitet, das direkt nach der Bewertung
+gelöscht wird. Die Berichte bleiben nur im Arbeitsspeicher, standardmäßig
+eine Stunde (`REPORT_RETENTION_HOURS`), dann sind sie weg. Kein Volume,
+keine Datenbank. Was Mistral mit den übertragenen Daten tut, regeln deren
+Nutzungsbedingungen.
+
 ## Struktur
 
 ```
@@ -24,7 +31,7 @@ backend/    FastAPI + Python 3.12 (Railway, Dockerfile)
   app/grader.py        Bewertung mit Mistral Large, strukturierter Output
   app/report.py        Markdown- und DOCX-Bericht
   app/pipeline.py      Gesamtablauf
-  app/jobs.py          Job-Verwaltung (in-process)
+  app/jobs.py          Job-Verwaltung im Arbeitsspeicher, temporäre Verarbeitung
   app/main.py          HTTP-API
   app/rubrics/         Rubrik (YAML), Aufgabenstellung und Case-Text (Markdown)
   scripts/run_local.py Eine Abgabe lokal bewerten
@@ -101,8 +108,7 @@ Vorlage: `meditec_pitch.yaml`.
 
 **Railway (Backend):** Root Directory `backend`, baut über das Dockerfile
 (enthält ffmpeg, LibreOffice, poppler). Variablen: `MISTRAL_API_KEY`,
-`FRONTEND_ORIGIN=https://<vercel-domain>`; alle weiteren siehe `.env.example`. Ein Volume auf `/data` hält die Berichte
-über Neustarts.
+`FRONTEND_ORIGIN=https://<vercel-domain>`; alle weiteren siehe `.env.example`. Kein Volume nötig.
 
 **Vercel (Frontend):** Root Directory `frontend`, Framework Next.js.
 Variable: `NEXT_PUBLIC_API_URL=https://<railway-domain>`.

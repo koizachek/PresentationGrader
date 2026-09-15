@@ -2,13 +2,18 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 
 from . import jobs
 from .config import settings
 from .context import RUBRIC_EXT, TEXT_EXT, default_context
 
 app = FastAPI(title="PresentationGrader API", version="0.1.0")
+
+
+@app.on_event("startup")
+def _startup() -> None:
+    jobs.start_janitor()
 
 origins = [o.strip() for o in settings.frontend_origin.split(",") if o.strip()]
 app.add_middleware(
@@ -23,14 +28,14 @@ MEDIA = {
     "report.docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "report.md": "text/markdown; charset=utf-8",
     "result.json": "application/json",
-    "deck.json": "application/json",
 }
 
 
 @app.get("/api/health")
 def health() -> dict:
     return {"ok": True, "model": settings.mistral_model, "transcriber": settings.transcriber,
-            "transcribe_model": settings.mistral_transcribe_model}
+            "transcribe_model": settings.mistral_transcribe_model,
+            "report_retention_hours": settings.report_retention_hours}
 
 
 @app.get("/api/config")
@@ -89,14 +94,14 @@ def get_job(job_id: str) -> dict:
 
 
 @app.get("/api/jobs/{job_id}/{name}")
-def download(job_id: str, name: str) -> FileResponse:
+def download(job_id: str, name: str) -> Response:
     job = jobs.get(job_id)
     if not job or job.status != "done":
-        raise HTTPException(404, "Kein fertiger Bericht für diesen Job.")
-    if name not in MEDIA:
+        raise HTTPException(404, "Kein fertiger Bericht für diesen Job (oder Aufbewahrungsfrist abgelaufen).")
+    blob = job.reports.get(name)
+    if name not in MEDIA or blob is None:
         raise HTTPException(404, "Unbekannte Datei.")
-    path: Path = job.dir / name
-    if not path.exists():
-        raise HTTPException(404, "Datei fehlt.")
     stem = Path(job.filename).stem
-    return FileResponse(path, media_type=MEDIA[name], filename=f"Bewertung {stem}{path.suffix}")
+    fname = f"Bewertung {stem}{Path(name).suffix}".replace('"', "")
+    return Response(content=blob, media_type=MEDIA[name],
+                    headers={"Content-Disposition": f'attachment; filename="{fname}"'})

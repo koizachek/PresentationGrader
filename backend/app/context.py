@@ -130,5 +130,4 @@ def build_context(job_dir: Path, rubric: Path | None = None, task: Path | None =
         ctx.task, ctx.task_source = extract_text(task), task.name
     if case:
         ctx.case, ctx.case_source = extract_text(case), case.name
-    (job_dir / "context.json").write_text(json.dumps(ctx.summary(), ensure_ascii=False, indent=1), encoding="utf-8")
     return ctx
