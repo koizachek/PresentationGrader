@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 
 from . import jobs
 from .config import settings
+from .context import RUBRIC_EXT, TEXT_EXT, default_context
 
 app = FastAPI(title="PresentationGrader API", version="0.1.0")
 
@@ -32,8 +33,33 @@ def health() -> dict:
             "transcribe_model": settings.mistral_transcribe_model}
 
 
+@app.get("/api/config")
+def config() -> dict:
+    """What the grader is currently aligned to (defaults; a job may override)."""
+    return {"defaults": default_context().summary(),
+            "accepted": {"rubric": sorted(RUBRIC_EXT), "task": sorted(TEXT_EXT), "case": sorted(TEXT_EXT)}}
+
+
+async def _optional(upload: UploadFile | None, allowed: set[str], label: str) -> tuple[str, bytes] | None:
+    if upload is None or not upload.filename:
+        return None
+    ext = Path(upload.filename).suffix.lower()
+    if ext not in allowed:
+        raise HTTPException(415, f"{label}: Dateityp {ext or '(ohne Endung)'} nicht erlaubt. Erlaubt: {', '.join(sorted(allowed))}")
+    data = await upload.read()
+    if len(data) > settings.max_upload_mb * 1024 * 1024:
+        raise HTTPException(413, f"{label}: Datei größer als {settings.max_upload_mb} MB.")
+    return upload.filename, data
+
+
 @app.post("/api/jobs", status_code=202)
-async def create_job(file: UploadFile = File(...), language: str = Form("auto")) -> dict:
+async def create_job(
+    file: UploadFile = File(...),
+    language: str = Form("auto"),
+    rubric: UploadFile | None = File(None),
+    task: UploadFile | None = File(None),
+    case: UploadFile | None = File(None),
+) -> dict:
     if not file.filename or not file.filename.lower().endswith(".pptx"):
         raise HTTPException(415, "Bitte eine .pptx-Datei hochladen.")
     data = await file.read()
@@ -41,7 +67,16 @@ async def create_job(file: UploadFile = File(...), language: str = Form("auto"))
         raise HTTPException(413, f"Datei größer als {settings.max_upload_mb} MB.")
     if language not in ("auto", "de", "en"):
         raise HTTPException(422, "language must be auto, de or en")
-    job = jobs.create(file.filename, data, language)
+    overrides = {}
+    for kind, up, allowed, label in (("rubric", rubric, RUBRIC_EXT, "Rubrik"), ("task", task, TEXT_EXT, "Aufgabenstellung"),
+                                     ("case", case, TEXT_EXT, "Case-Text")):
+        got = await _optional(up, allowed, label)
+        if got:
+            overrides[kind] = got
+    try:
+        job = jobs.create(file.filename, data, language, overrides)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
     return job.public()
 
 

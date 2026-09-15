@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { API, LEVEL_LABEL, fetchJob, uploadSubmission, type Job } from "@/lib/api";
+import { API, LEVEL_LABEL, fetchConfig, fetchJob, uploadSubmission, type Config, type Job, type Overrides } from "@/lib/api";
 import { Help } from "./help";
 
 type Lang = "auto" | "de" | "en";
@@ -25,6 +25,10 @@ const HELP = {
   coverage: "Ob die Teilaufgaben 1 bis 3 im Pitch vorkommen. Wird berichtet, nicht bepunktet: Der Pitch verlangt die beste Lösung, nicht alle Teilaufgaben.",
   delivery: "Beobachtungen zur Tonspur: Sprechtempo, Verständlichkeit, Verhältnis von Folie und gesprochenem Wort, Dauer. Wird berichtet, nicht bepunktet.",
   formal: "Automatisch geprüft: Dauer gegenüber der 7-Minuten-Vorgabe, Tonspur auf allen Inhaltsfolien, Dateiformat, Offenlegung von KI-Einsatz. Nur Hinweise, kein Abzug.",
+  context: "Der Grader ist standardmäßig auf die unten genannte Aufgabe ausgerichtet. Für eine andere Aufgabe laden Sie hier eigene Dateien hoch; sie gelten nur für diesen Durchlauf. Rubrik als YAML oder JSON im Format der Standardrubrik (Kriterien mit id, name, max_points und drei Niveaus). Aufgabenstellung und Case-Text als Markdown, Text, PDF, PPTX oder DOCX.",
+  rubric: "Bewertungsraster: Kriterien, Punkte je Kriterium, Niveau-Deskriptoren, optional Abdeckungs-Checks und Vortragsaspekte. Ohne Upload gilt die Standardrubrik.",
+  task: "Die Aufgabenstellung, die die Studierenden bekommen haben. Das Modell prüft daran, ob der Pitch die gestellte Frage beantwortet.",
+  case: "Das Fallmaterial (Teaching Case), auf das sich die Abgabe bezieht. Damit prüft das Modell Zahlen und Fallbezüge.",
 };
 
 export default function Page() {
@@ -35,6 +39,11 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const [drag, setDrag] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [config, setConfig] = useState<Config | null>(null);
+  const [ov, setOv] = useState<Overrides>({});
+  const ovRefs = { rubric: useRef<HTMLInputElement>(null), task: useRef<HTMLInputElement>(null), case: useRef<HTMLInputElement>(null) };
+
+  useEffect(() => { fetchConfig().then(setConfig).catch(() => setConfig(null)); }, []);
 
   const pick = (f: File | undefined) => {
     setError(null);
@@ -46,10 +55,10 @@ export default function Page() {
   const submit = useCallback(async () => {
     if (!file) return;
     setBusy(true); setError(null);
-    try { setJob(await uploadSubmission(file, lang)); }
+    try { setJob(await uploadSubmission(file, lang, ov)); }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
-  }, [file, lang]);
+  }, [file, lang, ov]);
 
   useEffect(() => {
     if (!job || job.status === "done" || job.status === "error") return;
@@ -103,9 +112,37 @@ export default function Page() {
         {error && <p className="err" style={{ marginBottom: 0 }}>{error}</p>}
       </section>
 
+      <section className="card">
+        <h2>2. Aufgabe anpassen (optional) <Help text={HELP.context} /></h2>
+        {config ? (
+          <p className="small" style={{ marginTop: 0 }}>
+            Aktuell ausgerichtet auf: <strong>{config.defaults.rubric.title}</strong> (Rubrik {config.defaults.rubric.version}, {config.defaults.rubric.max_points} Punkte,
+            Kriterien: {config.defaults.rubric.criteria.join(", ")}). Aufgabenstellung: {config.defaults.task.first_line.replace(/^#+\s*/, "")}.
+          </p>
+        ) : <p className="small" style={{ marginTop: 0 }}>Standardkonfiguration wird geladen…</p>}
+        <div className="row" style={{ gap: 20 }}>
+          {(["rubric", "task", "case"] as const).map((k) => (
+            <div className="field" key={k} style={{ flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+              <label htmlFor={`ov-${k}`} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                {k === "rubric" ? "Rubrik" : k === "task" ? "Aufgabenstellung" : "Case-Text"} <Help text={HELP[k]} />
+              </label>
+              <input id={`ov-${k}`} ref={ovRefs[k]} type="file" disabled={!!running}
+                accept={config ? config.accepted[k].join(",") : undefined}
+                onChange={(e) => setOv((o) => ({ ...o, [k]: e.target.files?.[0] ?? null }))} />
+            </div>
+          ))}
+        </div>
+        {(ov.rubric || ov.task || ov.case) && (
+          <p className="small">
+            Für diesen Durchlauf: {[ov.rubric && `Rubrik ${ov.rubric.name}`, ov.task && `Aufgabe ${ov.task.name}`, ov.case && `Case ${ov.case.name}`].filter(Boolean).join(", ")}.{" "}
+            <button className="btn secondary" style={{ padding: "4px 10px" }} onClick={() => { setOv({}); Object.values(ovRefs).forEach((r) => { if (r.current) r.current.value = ""; }); }}>Standard verwenden</button>
+          </p>
+        )}
+      </section>
+
       {job && (
         <section className="card">
-          <h2>2. Bewertung <Help text={HELP.result} /></h2>
+          <h2>3. Bewertung <Help text={HELP.result} /></h2>
           {running && (
             <div className="status">
               <span className="spinner" />
@@ -127,6 +164,7 @@ export default function Page() {
                   <Help text={HELP.download} />
                 </div>
               </div>
+              {job.context && <p className="small">Bewertet mit: Rubrik {job.context.rubric.source}, Aufgabe {job.context.task.source}, Case {job.context.case.source}.</p>}
               <p className="small">Empfehlung der Gruppe: {res.recommendation_identified}</p>
               <p>{res.summary}</p>
               <table>

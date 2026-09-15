@@ -10,6 +10,7 @@ import yaml
 from pydantic import BaseModel, Field
 
 from .config import settings
+from .context import GradingContext, default_context
 from .pptx_parser import Deck
 
 Level = Literal["ueberzeugend", "tragfaehig", "ansatzweise"]
@@ -64,14 +65,6 @@ class FormalCheck(BaseModel):
     label: str
     ok: bool | None
     detail: str
-
-
-def load_rubric(path: Path | None = None) -> dict:
-    return yaml.safe_load((path or settings.rubric_path).read_text(encoding="utf-8"))
-
-
-def _read(p: Path) -> str:
-    return p.read_text(encoding="utf-8") if p.exists() else ""
 
 
 SYSTEM = """Du bewertest als erfahrene Dozentin für Wirtschaftsinformatik einen studentischen Pitch
@@ -153,8 +146,8 @@ def formal_checks(deck: Deck, metrics: dict, rubric: dict, lang: str) -> list[Fo
     return out
 
 
-def _build_prompt(deck: Deck, metrics: dict, rubric: dict, checks: list[FormalCheck], lang: str) -> str:
-    task, case = _read(settings.task_path), _read(settings.case_path)
+def _build_prompt(deck: Deck, metrics: dict, ctx: GradingContext, checks: list[FormalCheck], lang: str) -> str:
+    rubric, task, case = ctx.rubric, ctx.task, ctx.case
     return (
         LANG_INSTRUCTION[lang] + "\n\n" +
         "# Case-Text\n" + (case or "(kein Case-Text hinterlegt)") +
@@ -197,9 +190,9 @@ def _grade_mistral(prompt: str, images: list[tuple[int, str]]) -> GradingResult:
 
 
 
-def grade(deck: Deck, metrics: dict, lang: str, rubric: dict | None = None) -> tuple[GradingResult, list[FormalCheck]]:
-    rubric = rubric or load_rubric()
-    checks = formal_checks(deck, metrics, rubric, lang)
-    prompt = _build_prompt(deck, metrics, rubric, checks, lang)
+def grade(deck: Deck, metrics: dict, lang: str, ctx: GradingContext | None = None) -> tuple[GradingResult, list[FormalCheck]]:
+    ctx = ctx or default_context()
+    checks = formal_checks(deck, metrics, ctx.rubric, lang)
+    prompt = _build_prompt(deck, metrics, ctx, checks, lang)
     result = _grade_mistral(prompt, _images(deck))
     return result, checks

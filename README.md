@@ -67,18 +67,31 @@ Ohne LibreOffice lokal `RENDER_SLIDES=0` setzen; die Bewertung läuft dann
 nur auf Text und Transkript. Ohne Transkriptionsdienst `TRANSCRIBER=notes`
 (Sprechernotizen ersetzen das Transkript, nur zum Testen).
 
-## Wiederverwendung für einen anderen Case
+## Wiederverwendung für eine andere Aufgabe
 
-Drei Dateien tauschen, sonst nichts: Rubrik (YAML mit `criteria`, `coverage`,
-`delivery_aspects`, `formal_checks`), Aufgabenstellung (Markdown) und Case-Text
-(Markdown). Pfade über `RUBRIC_PATH`, `TASK_PATH`, `CASE_PATH` in der `.env`.
+Zwei Wege:
+
+1. **Pro Durchlauf im Frontend** (Abschnitt „Aufgabe anpassen"): Rubrik
+   (YAML/JSON), Aufgabenstellung und Case-Text (Markdown, Text, PDF, PPTX,
+   DOCX) hochladen. Gilt nur für diesen Job; die Dateien werden mit dem Job
+   gespeichert und im Bericht als Quelle genannt.
+2. **Dauerhaft als Standard:** die drei Dateien in `backend/app/rubrics/`
+   ersetzen oder über `RUBRIC_PATH`, `TASK_PATH`, `CASE_PATH` in der `.env`
+   auf andere Dateien zeigen. `GET /api/config` zeigt, worauf der Grader
+   gerade ausgerichtet ist.
+
+Die Rubrik muss `max_points` und `criteria` enthalten; jedes Kriterium
+`id`, `name`, `max_points` und `levels` mit `ueberzeugend`, `tragfaehig`,
+`ansatzweise`. `coverage`, `delivery_aspects` und `formal_checks` sind optional.
+Vorlage: `meditec_pitch.yaml`.
 
 ## API
 
 | Methode | Pfad | Zweck |
 |---|---|---|
 | `GET`  | `/api/health` | Status |
-| `POST` | `/api/jobs` (multipart `file`, optional `language`=auto/de/en) | Abgabe hochladen, liefert Job |
+| `GET`  | `/api/config` | Standard-Rubrik, -Aufgabe, -Case und erlaubte Dateitypen |
+| `POST` | `/api/jobs` (multipart `file`; optional `language`=auto/de/en, `rubric`, `task`, `case`) | Abgabe hochladen, liefert Job |
 | `GET`  | `/api/jobs/{id}` | Status und Ergebnis |
 | `GET`  | `/api/jobs/{id}/report.docx` | Bewertung als Word |
 | `GET`  | `/api/jobs/{id}/report.md` | Bewertung als Markdown |

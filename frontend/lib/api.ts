@@ -21,17 +21,36 @@ export type GradingResult = {
 };
 
 export type Job = {
-  id: string; filename: string; language: string;
+  id: string; filename: string; language: string; context: ContextSummary | null;
   status: "queued" | "running" | "done" | "error";
   stage: string; message: string; error: string | null;
   result: { result: GradingResult; formal_checks: FormalCheck[]; metrics: Record<string, unknown>; markdown: string } | null;
   downloads: { docx: string; md: string; json: string } | null;
 };
 
-export async function uploadSubmission(file: File, language: "auto" | "de" | "en" = "auto"): Promise<Job> {
+export type Overrides = { rubric?: File | null; task?: File | null; case?: File | null };
+
+export type ContextSummary = {
+  rubric: { title: string; version: string; max_points: number | null; criteria: string[]; source: string };
+  task: { words: number; first_line: string; source: string };
+  case: { words: number; first_line: string; source: string };
+};
+
+export type Config = { defaults: ContextSummary; accepted: { rubric: string[]; task: string[]; case: string[] } };
+
+export async function fetchConfig(): Promise<Config> {
+  const r = await fetch(`${API}/api/config`, { cache: "no-store" });
+  if (!r.ok) throw new Error(`Konfiguration konnte nicht geladen werden (${r.status})`);
+  return r.json();
+}
+
+export async function uploadSubmission(file: File, language: "auto" | "de" | "en" = "auto", overrides: Overrides = {}): Promise<Job> {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("language", language);
+  if (overrides.rubric) fd.append("rubric", overrides.rubric);
+  if (overrides.task) fd.append("task", overrides.task);
+  if (overrides.case) fd.append("case", overrides.case);
   const r = await fetch(`${API}/api/jobs`, { method: "POST", body: fd });
   if (!r.ok) throw new Error((await r.json().catch(() => ({})))?.detail ?? `Upload fehlgeschlagen (${r.status})`);
   return r.json();
