@@ -9,7 +9,7 @@ Frontend auf Vercel, Backend auf Railway.
 1. Upload der `.pptx` im Frontend.
 2. Backend extrahiert je Folie Text, Sprechernotizen, Tonspur (MP3) und Dauer,
    rendert die Folien als PNG (LibreOffice) und transkribiert die Tonspuren.
-3. Mistral Large bewertet entlang der
+3. Mistral Large (über OpenRouter) bewertet entlang der
    Rubrik (`backend/app/rubrics/meditec_pitch.yaml`), der Aufgabenstellung
    (`task.md`) und dem Case-Text (`case_meditec.md`). Feedbacksprache Deutsch
    oder Englisch, beim Upload wählbar oder automatisch nach der Abgabe.
@@ -20,15 +20,16 @@ einem temporären Verzeichnis verarbeitet, das direkt nach der Bewertung
 gelöscht wird. Die Berichte bleiben nur im Arbeitsspeicher, standardmäßig
 eine Stunde (`REPORT_RETENTION_HOURS`), dann sind sie weg. Kein Volume,
 keine Datenbank. Was Mistral mit den übertragenen Daten tut, regeln deren
-Nutzungsbedingungen.
+Nutzungsbedingungen von OpenRouter und Mistral.
 
 ## Struktur
 
 ```
 backend/    FastAPI + Python 3.12 (Railway, Root Directory = backend)
   app/pptx_parser.py   PPTX -> Folien, Notizen, Audio, Bilder
-  app/transcribe.py    Speech-to-text mit Mistral Voxtral
-  app/grader.py        Bewertung mit Mistral Large, strukturierter Output
+  app/transcribe.py    Speech-to-text mit Mistral Voxtral über OpenRouter
+  app/grader.py        Bewertung mit Mistral Large über OpenRouter, strukturierter Output
+  app/openrouter.py    OpenRouter-Client (HTTP, kein SDK)
   app/report.py        Markdown- und DOCX-Bericht
   app/pipeline.py      Gesamtablauf
   app/jobs.py          Job-Verwaltung im Arbeitsspeicher, temporäre Verarbeitung
@@ -107,7 +108,7 @@ Vorlage: `meditec_pitch.yaml`.
 ## Deployment
 
 **Railway (Backend):** Root Directory `backend`, baut über `backend/Dockerfile`
-(mit ffmpeg, LibreOffice, poppler). Variablen: `MISTRAL_API_KEY`,
+(mit ffmpeg, LibreOffice, poppler). Variablen: `OPENROUTER_KEY`,
 `FRONTEND_ORIGIN=https://<vercel-domain>`; alle weiteren siehe `.env.example`. Kein Volume nötig.
 
 **Vercel (Frontend):** Root Directory `frontend`, Framework Next.js.

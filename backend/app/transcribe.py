@@ -1,8 +1,8 @@
 """Speech-to-text for the per-slide audio tracks.
 
 Provider is chosen with TRANSCRIBER:
-  mistral : Mistral Voxtral transcription endpoint.
-  notes   : no STT; speaker notes stand in for the transcript (dev/fallback).
+  openrouter : Mistral Voxtral via OpenRouter (audio input in chat completions).
+  notes      : no STT; speaker notes stand in for the transcript (dev/fallback).
 """
 from __future__ import annotations
 
@@ -19,32 +19,26 @@ FILLERS = {
 _DE = {"und", "der", "die", "das", "nicht", "ist", "wir", "mit", "für", "auch", "eine", "sich"}
 _EN = {"and", "the", "is", "not", "we", "with", "for", "also", "this", "that", "are", "of"}
 
-MIME = {".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".mp4": "audio/mp4", ".wav": "audio/wav",
-        ".aac": "audio/aac", ".wma": "audio/x-ms-wma", ".m4v": "video/mp4"}
 
 
-def _mistral_transcribe(path: Path) -> str:
-    from mistralai.client import Mistral
+FMT = {".mp3": "mp3", ".wav": "wav", ".m4a": "m4a", ".mp4": "mp4", ".aac": "aac", ".m4v": "mp4", ".wma": "wma"}
 
-    client = Mistral(api_key=settings.mistral_api_key, server=settings.mistral_server)
-    kwargs = {"language": settings.transcribe_language} if settings.transcribe_language else {}
-    r = client.audio.transcriptions.complete(
-        model=settings.mistral_transcribe_model,
-        file={"file_name": path.name, "content": path.read_bytes(),
-              "content_type": MIME.get(path.suffix.lower(), "application/octet-stream")},
-        **kwargs,
-    )
-    return r.text or ""
+
+def _openrouter_transcribe(path: Path) -> str:
+    from .openrouter import transcribe
+
+    return transcribe(path.read_bytes(), FMT.get(path.suffix.lower(), "mp3"),
+                      settings.openrouter_transcribe_model, settings.transcribe_language)
 
 
 
-_PROVIDERS = {"mistral": _mistral_transcribe}
+_PROVIDERS = {"openrouter": _openrouter_transcribe}
 
 
 def transcribe_deck(deck: Deck, provider: str | None = None) -> Deck:
     provider = provider or settings.transcriber
     if provider not in _PROVIDERS and provider != "notes":
-        raise ValueError(f"Unknown TRANSCRIBER={provider!r} (mistral | notes)")
+        raise ValueError(f"Unknown TRANSCRIBER={provider!r} (openrouter | notes)")
     for s in deck.slides:
         if not s.audio_path:
             s.transcript = None

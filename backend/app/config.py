@@ -7,14 +7,13 @@ class Settings(BaseSettings):
     # reads backend/.env and the repo-root .env (root wins)
     model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
 
-    # --- Mistral (grading + transcription) ---
-    mistral_api_key: str = ""
-    mistral_server: str = "global"  # global (api.mistral.ai) | eu | us
-    mistral_model: str = "mistral-large-latest"
-    mistral_transcribe_model: str = "voxtral-mini-latest"
-    transcribe_language: str = ""  # "" = auto-detect, else e.g. "de"
-    # notes = no speech-to-text, speaker notes stand in (dev only)
-    transcriber: str = "mistral"  # mistral | notes
+    # --- OpenRouter (Mistral models for grading and transcription) ---
+    openrouter_key: str = ""
+    openrouter_model: str = "mistralai/mistral-large-2512"
+    openrouter_transcribe_model: str = "mistralai/voxtral-small-24b-2507"
+    transcribe_language: str = ""  # "" = let the model detect, else e.g. "Deutsch"
+    # openrouter = Voxtral via OpenRouter; notes = no speech-to-text, speaker notes stand in (dev only)
+    transcriber: str = "openrouter"  # openrouter | notes
 
     # --- feedback ---
     feedback_language: str = "auto"  # auto | de | en

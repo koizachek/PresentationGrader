@@ -29,7 +29,7 @@ def run(pptx: Path, out_dir: Path, language: str = "auto", progress: Progress = 
     lang = language if language in ("de", "en") else (settings.feedback_language if settings.feedback_language in ("de", "en") else detect_language(deck))
     metrics = speech_metrics(deck, lang)
 
-    progress("grading", settings.mistral_model)
+    progress("grading", settings.openrouter_model)
     result, checks = grade(deck, metrics, lang, ctx)
 
     progress("reporting", "")

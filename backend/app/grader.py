@@ -1,4 +1,4 @@
-"""Rubric-based grading of a parsed, transcribed deck with Mistral."""
+"""Rubric-based grading of a parsed, transcribed deck with Mistral Large via OpenRouter."""
 from __future__ import annotations
 
 import base64
@@ -167,26 +167,22 @@ def _images(deck: Deck) -> list[tuple[int, str]]:
             for s in deck.slides if s.image_path and s.image_path.exists()]
 
 
-def _grade_mistral(prompt: str, images: list[tuple[int, str]]) -> GradingResult:
-    from mistralai.client import Mistral
+def _grade_openrouter(prompt: str, images: list[tuple[int, str]]) -> GradingResult:
+    from .openrouter import chat_json
 
-    client = Mistral(api_key=settings.mistral_api_key, server=settings.mistral_server)
     content: list[dict] = []
     for n, b64 in images:
         content.append({"type": "text", "text": f"Folie {n} (gerendert):"})
-        content.append({"type": "image_url", "image_url": f"data:image/png;base64,{b64}"})
+        content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}})
     content.append({"type": "text", "text": prompt})
-    resp = client.chat.parse(
-        response_format=GradingResult,
-        model=settings.mistral_model,
-        messages=[{"role": "system", "content": SYSTEM}, {"role": "user", "content": content}],
-        max_tokens=16000,
-        temperature=0.2,
-    )
-    parsed = resp.choices[0].message.parsed
-    if parsed is None:
-        raise RuntimeError("Mistral returned no parsable result")
-    return parsed
+    schema = GradingResult.model_json_schema()
+    messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": content}]
+    text = chat_json(messages, settings.openrouter_model, schema, "grading_result", max_tokens=16000)
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.strip("`")
+        text = text[text.find("{"):text.rfind("}") + 1]
+    return GradingResult.model_validate_json(text)
 
 
 
@@ -194,5 +190,5 @@ def grade(deck: Deck, metrics: dict, lang: str, ctx: GradingContext | None = Non
     ctx = ctx or default_context()
     checks = formal_checks(deck, metrics, ctx.rubric, lang)
     prompt = _build_prompt(deck, metrics, ctx, checks, lang)
-    result = _grade_mistral(prompt, _images(deck))
+    result = _grade_openrouter(prompt, _images(deck))
     return result, checks
