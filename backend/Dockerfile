@@ -8,10 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
-# build context is the repo root (Railway without Root Directory); a copy for Root Directory = backend lives in backend/Dockerfile
-COPY backend/pyproject.toml backend/uv.lock ./
+# build context is backend/ (Railway Root Directory = backend)
+COPY pyproject.toml uv.lock ./
 RUN uv pip install --system -r pyproject.toml
-COPY backend/app ./app
+COPY app ./app
 
 ENV PORT=8000
 EXPOSE 8000
