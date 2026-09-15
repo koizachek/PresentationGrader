@@ -8,9 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
-COPY pyproject.toml uv.lock ./
+# build context is the repo root; the backend lives in backend/
+COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv pip install --system -r pyproject.toml
-COPY app ./app
+COPY backend/app ./app
 
 ENV PORT=8000
 EXPOSE 8000
