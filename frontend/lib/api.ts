@@ -36,7 +36,7 @@ export type ContextSummary = {
   case: { words: number; first_line: string; source: string };
 };
 
-export type Config = { defaults: ContextSummary; accepted: { rubric: string[]; task: string[]; case: string[] } };
+export type Config = { defaults: ContextSummary; accepted: { rubric: string[]; task: string[]; case: string[] }; max_upload_mb: number };
 
 export async function fetchConfig(): Promise<Config> {
   const r = await fetch(`${API}/api/config`, { cache: "no-store" });

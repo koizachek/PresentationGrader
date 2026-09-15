@@ -17,7 +17,7 @@ const STAGES: Record<string, string> = {
 };
 
 const HELP = {
-  upload: "Erwartet wird eine PowerPoint-Datei (.pptx), in der jede Folie eine eigene Tonspur trägt, wie sie PowerPoint mit „Bildschirmpräsentation aufzeichnen“ erzeugt. Text, Notizen und Audio werden pro Folie ausgelesen.",
+  upload: "Erwartet wird eine PowerPoint-Datei (.pptx), in der jede Folie eine eigene Tonspur trägt, wie sie PowerPoint mit „Bildschirmpräsentation aufzeichnen“ erzeugt. Text, Notizen und Audio werden pro Folie ausgelesen. Maximale Dateigröße 200 MB. Die Datei wird nach der Bewertung gelöscht.",
   language: "Sprache des Feedbacks. „Automatisch“ richtet sich nach der Sprache der Abgabe. Die Bewertungskriterien bleiben dieselben.",
   grade: "Startet die Pipeline: Folien extrahieren, Tonspuren transkribieren, entlang der Rubrik bewerten, Bericht erzeugen. Dauert je nach Länge einige Minuten. Kein Login, nichts wird über den Bericht hinaus gespeichert.",
   result: "Vier Kriterien aus der Aufgabenstellung, zusammen 20 Punkte. Je Kriterium wird erst das Niveau bestimmt (überzeugend, tragfähig, ansatzweise), dann die Punkte im Band dieses Niveaus. Jede Wertung nennt Belege aus Folien oder Tonspur.",
@@ -45,10 +45,13 @@ export default function Page() {
 
   useEffect(() => { fetchConfig().then(setConfig).catch(() => setConfig(null)); }, []);
 
+  const maxMb = config?.max_upload_mb ?? 200;
+
   const pick = (f: File | undefined) => {
     setError(null);
     if (!f) return;
     if (!f.name.toLowerCase().endsWith(".pptx")) { setError("Bitte eine .pptx-Datei wählen."); return; }
+    if (f.size > maxMb * 1024 * 1024) { setError(`Datei ist ${(f.size / 1024 / 1024).toFixed(0)} MB groß, erlaubt sind maximal ${maxMb} MB.`); return; }
     setFile(f); setJob(null);
   };
 
@@ -88,7 +91,7 @@ export default function Page() {
         >
           <input ref={inputRef} type="file" accept=".pptx" onChange={(e) => pick(e.target.files?.[0])} />
           <div><strong>{file ? file.name : "Datei hier ablegen oder klicken"}</strong></div>
-          <div className="hint">{file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : ".pptx mit Tonspur je Folie"}</div>
+          <div className="hint">{file ? `${(file.size / 1024 / 1024).toFixed(1)} MB von maximal ${maxMb} MB` : `.pptx mit Tonspur je Folie, maximal ${maxMb} MB`}</div>
         </label>
 
         <div className="row" style={{ marginTop: 16, justifyContent: "space-between" }}>

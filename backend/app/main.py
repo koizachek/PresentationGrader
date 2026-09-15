@@ -42,7 +42,8 @@ def health() -> dict:
 def config() -> dict:
     """What the grader is currently aligned to (defaults; a job may override)."""
     return {"defaults": default_context().summary(),
-            "accepted": {"rubric": sorted(RUBRIC_EXT), "task": sorted(TEXT_EXT), "case": sorted(TEXT_EXT)}}
+            "accepted": {"rubric": sorted(RUBRIC_EXT), "task": sorted(TEXT_EXT), "case": sorted(TEXT_EXT)},
+            "max_upload_mb": settings.max_upload_mb}
 
 
 async def _optional(upload: UploadFile | None, allowed: set[str], label: str) -> tuple[str, bytes] | None:
