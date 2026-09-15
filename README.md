@@ -25,7 +25,7 @@ Nutzungsbedingungen.
 ## Struktur
 
 ```
-backend/    FastAPI + Python 3.12 (Railway; Dockerfile und railway.json im Root)
+backend/    FastAPI + Python 3.12 (Railway, Root Directory = backend)
   app/pptx_parser.py   PPTX -> Folien, Notizen, Audio, Bilder
   app/transcribe.py    Speech-to-text mit Mistral Voxtral
   app/grader.py        Bewertung mit Mistral Large, strukturierter Output
@@ -106,8 +106,8 @@ Vorlage: `meditec_pitch.yaml`.
 
 ## Deployment
 
-**Railway (Backend):** Repo verbinden, kein Root Directory nötig. Das
-`Dockerfile` im Repo-Root baut das Backend (mit ffmpeg, LibreOffice, poppler). Variablen: `MISTRAL_API_KEY`,
+**Railway (Backend):** Root Directory `backend`, baut über `backend/Dockerfile`
+(mit ffmpeg, LibreOffice, poppler). Variablen: `MISTRAL_API_KEY`,
 `FRONTEND_ORIGIN=https://<vercel-domain>`; alle weiteren siehe `.env.example`. Kein Volume nötig.
 
 **Vercel (Frontend):** Root Directory `frontend`, Framework Next.js.
