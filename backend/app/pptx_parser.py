@@ -17,7 +17,7 @@ from pathlib import Path
 from pptx import Presentation
 from pptx.util import Emu
 
-AUDIO_EXT = {".mp3", ".m4a", ".wav", ".wma", ".aac", ".mp4", ".m4v"}
+AUDIO_EXT = {".mp3", ".m4a", ".wav", ".wma", ".aac", ".mp4", ".m4v", ".ogg", ".oga", ".opus", ".flac", ".webm", ".mov", ".avi", ".wmv", ".mid"}
 
 
 @dataclass
@@ -112,6 +112,22 @@ def _slide_audio(slide, work_dir: Path, number: int) -> Path | None:
     return None
 
 
+def to_mp3(path: Path) -> Path:
+    """Re-encode any embedded audio/video track to a mono 16 kHz MP3 (what the STT model accepts).
+    Returns the original path if ffmpeg is unavailable or fails."""
+    if not shutil.which("ffmpeg"):
+        return path
+    out = path.with_name(path.stem + "_stt.mp3")
+    try:
+        subprocess.run(
+            ["ffmpeg", "-y", "-v", "error", "-i", str(path), "-vn", "-ac", "1", "-ar", "16000", "-b:a", "48k", str(out)],
+            capture_output=True, check=True, timeout=300,
+        )
+        return out if out.exists() and out.stat().st_size > 0 else path
+    except Exception:
+        return path
+
+
 def audio_duration(path: Path) -> float | None:
     if not shutil.which("ffprobe"):
         return None
@@ -159,6 +175,8 @@ def parse_pptx(pptx: Path, work_dir: Path, render: bool = True) -> Deck:
         if slide.has_notes_slide and slide.notes_slide.notes_text_frame is not None:
             notes = slide.notes_slide.notes_text_frame.text.strip()
         audio = _slide_audio(slide, work_dir, i)
+        if audio:
+            audio = to_mp3(audio)
         deck.slides.append(
             SlideData(
                 number=i,

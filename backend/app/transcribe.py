@@ -27,8 +27,10 @@ FMT = {".mp3": "mp3", ".wav": "wav", ".m4a": "m4a", ".mp4": "mp4", ".aac": "aac"
 def _openrouter_transcribe(path: Path) -> str:
     from .openrouter import transcribe
 
-    return transcribe(path.read_bytes(), FMT.get(path.suffix.lower(), "mp3"),
-                      settings.openrouter_transcribe_model, settings.transcribe_language)
+    fmt = FMT.get(path.suffix.lower(), "mp3")
+    if fmt not in ("mp3", "wav"):
+        raise RuntimeError(f"Tonspur {path.name} konnte nicht nach MP3 umgewandelt werden (ffmpeg fehlt?).")
+    return transcribe(path.read_bytes(), fmt, settings.openrouter_transcribe_model, settings.transcribe_language)
 
 
 
