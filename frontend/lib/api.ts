@@ -52,7 +52,7 @@ export async function uploadSubmission(file: File, language: "auto" | "de" | "en
   if (overrides.task) fd.append("task", overrides.task);
   if (overrides.case) fd.append("case", overrides.case);
   const r = await fetch(`${API}/api/jobs`, { method: "POST", body: fd });
-  if (!r.ok) throw new Error((await r.json().catch(() => ({})))?.detail ?? `Upload fehlgeschlagen (${r.status})`);
+  if (!r.ok) throw new Error((await r.json().catch(() => ({})))?.detail ?? `Upload fehlgeschlagen (${r.status}) – Backend: ${API}`);
   return r.json();
 }
 
