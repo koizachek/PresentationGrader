@@ -19,7 +19,7 @@ origins = [o.strip() for o in settings.frontend_origin.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origin_regex=r"https://.*\.vercel\.app|http://localhost:\d+",
     allow_methods=["*"],
     allow_headers=["*"],
 )
