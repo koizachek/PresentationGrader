@@ -162,61 +162,52 @@ def _build_prompt(deck: Deck, metrics: dict, ctx: GradingContext, checks: list[F
     )
 
 
-MAX_IMAGES = 8  # Mistral accepts at most 8 images per request
-SLIDE_W = 800   # px per slide inside a contact sheet
+MAX_IMAGES_PER_REQUEST = 8  # Mistral accepts at most 8 images per request; decks are not limited
 
 
-def _contact_sheets(paths: list[tuple[int, Path]]) -> list[tuple[str, bytes]]:
-    """Tile rendered slides into at most MAX_IMAGES labelled sheets (2 columns)."""
-    import io
-    import math
-
-    from PIL import Image, ImageDraw
-
-    per_sheet = math.ceil(len(paths) / MAX_IMAGES)
-    sheets: list[tuple[str, bytes]] = []
-    for i in range(0, len(paths), per_sheet):
-        chunk = paths[i:i + per_sheet]
-        thumbs = []
-        for n, p in chunk:
-            im = Image.open(p).convert("RGB")
-            h = round(im.height * SLIDE_W / im.width)
-            thumbs.append((n, im.resize((SLIDE_W, h))))
-        cols = 1 if len(thumbs) == 1 else 2
-        rows = math.ceil(len(thumbs) / cols)
-        label_h, pad = 28, 12
-        cell_h = max(t.height for _, t in thumbs) + label_h
-        sheet = Image.new("RGB", (cols * (SLIDE_W + pad) + pad, rows * (cell_h + pad) + pad), "white")
-        draw = ImageDraw.Draw(sheet)
-        for k, (n, t) in enumerate(thumbs):
-            x = pad + (k % cols) * (SLIDE_W + pad)
-            y = pad + (k // cols) * (cell_h + pad)
-            draw.text((x + 4, y + 6), f"Folie {n}", fill="black")
-            sheet.paste(t, (x, y + label_h))
-            draw.rectangle([x, y + label_h, x + t.width - 1, y + label_h + t.height - 1], outline="#999999")
-        buf = io.BytesIO()
-        sheet.save(buf, format="PNG", optimize=True)
-        label = f"Folien {chunk[0][0]}–{chunk[-1][0]}" if len(chunk) > 1 else f"Folie {chunk[0][0]}"
-        sheets.append((label, buf.getvalue()))
-    return sheets
+def _slide_images(deck: Deck) -> list[tuple[int, str]]:
+    return [(s.number, base64.standard_b64encode(s.image_path.read_bytes()).decode())
+            for s in deck.slides if s.image_path and s.image_path.exists()]
 
 
-def _images(deck: Deck) -> list[tuple[str, str]]:
-    """(label, base64 PNG) per image, never more than MAX_IMAGES entries."""
-    paths = [(s.number, s.image_path) for s in deck.slides if s.image_path and s.image_path.exists()]
-    if not paths:
-        return []
-    if len(paths) <= MAX_IMAGES:
-        return [(f"Folie {n}", base64.standard_b64encode(p.read_bytes()).decode()) for n, p in paths]
-    return [(label, base64.standard_b64encode(png).decode()) for label, png in _contact_sheets(paths)]
+VISUAL_SYSTEM = """Du beschreibst gerenderte Präsentationsfolien für eine spätere Bewertung. Je Folie zwei bis drei
+Sätze: Aufbau und Gestaltung (Textmenge, Grafiken, Tabellen, Bilder, Hierarchie), Lesbarkeit, ob die Gestaltung
+die Botschaft trägt oder nur dekoriert. Keine Bewertung, keine Punkte, nur Beobachtung. Antworte als JSON-Objekt
+{"slides": [{"slide": <Nummer>, "observation": "<Text>"}]}."""
 
 
-def _grade_openrouter(prompt: str, images: list[tuple[str, str]]) -> GradingResult:
+def _visual_observations(images: list[tuple[int, str]]) -> dict[int, str]:
+    """For decks with more than MAX_IMAGES_PER_REQUEST slides: describe every slide image in batches."""
+    from .openrouter import chat_json
+
+    schema = {"type": "object", "properties": {"slides": {"type": "array", "items": {
+        "type": "object", "properties": {"slide": {"type": "integer"}, "observation": {"type": "string"}},
+        "required": ["slide", "observation"], "additionalProperties": False}}},
+        "required": ["slides"], "additionalProperties": False}
+    out: dict[int, str] = {}
+    for i in range(0, len(images), MAX_IMAGES_PER_REQUEST):
+        batch = images[i:i + MAX_IMAGES_PER_REQUEST]
+        content: list[dict] = []
+        for n, b64 in batch:
+            content.append({"type": "text", "text": f"Folie {n}:"})
+            content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}})
+        content.append({"type": "text", "text": "Beschreibe jede dieser Folien wie im Systemprompt verlangt."})
+        text = chat_json([{"role": "system", "content": VISUAL_SYSTEM}, {"role": "user", "content": content}],
+                         settings.openrouter_model, schema, "visual_observations", max_tokens=4000)
+        text = text.strip()
+        if text.startswith("```"):
+            text = text[text.find("{"):text.rfind("}") + 1]
+        for item in json.loads(text).get("slides", []):
+            out[int(item["slide"])] = str(item["observation"])
+    return out
+
+
+def _grade_openrouter(prompt: str, images: list[tuple[int, str]]) -> GradingResult:
     from .openrouter import chat_json
 
     content: list[dict] = []
-    for label, b64 in images:
-        content.append({"type": "text", "text": f"{label} (gerendert):"})
+    for n, b64 in images:
+        content.append({"type": "text", "text": f"Folie {n} (gerendert):"})
         content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}})
     content.append({"type": "text", "text": prompt})
     schema = GradingResult.model_json_schema()
@@ -234,5 +225,13 @@ def grade(deck: Deck, metrics: dict, lang: str, ctx: GradingContext | None = Non
     ctx = ctx or default_context()
     checks = formal_checks(deck, metrics, ctx.rubric, lang)
     prompt = _build_prompt(deck, metrics, ctx, checks, lang)
-    result = _grade_openrouter(prompt, _images(deck))
+    images = _slide_images(deck)
+    if len(images) <= MAX_IMAGES_PER_REQUEST:
+        result = _grade_openrouter(prompt, images)
+    else:
+        # every slide is still seen as an image, in batches; the grading request gets the observations as text
+        obs = _visual_observations(images)
+        prompt += "\n\n# Visuelle Beobachtungen je Folie (aus den gerenderten Folienbildern)\n" + \
+            "\n".join(f"- Folie {n}: {obs[n]}" for n in sorted(obs))
+        result = _grade_openrouter(prompt, [])
     return result, checks
