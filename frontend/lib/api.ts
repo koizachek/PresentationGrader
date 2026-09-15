@@ -1,4 +1,12 @@
-export const API = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+const DEFAULT_API = "https://presentationgrader-production.up.railway.app";
+// Accept the raw Railway domain, with or without protocol, trailing slash or a stray /api suffix.
+function normalize(raw: string | undefined): string {
+  let u = (raw ?? "").trim();
+  if (!u) return DEFAULT_API;
+  if (!/^https?:\/\//i.test(u)) u = `https://${u}`;
+  return u.replace(/\/+$/, "").replace(/\/api$/i, "");
+}
+export const API = normalize(process.env.NEXT_PUBLIC_API_URL);
 
 export type Level = "ueberzeugend" | "tragfaehig" | "ansatzweise";
 export const LEVEL_LABEL: Record<Level, string> = {
