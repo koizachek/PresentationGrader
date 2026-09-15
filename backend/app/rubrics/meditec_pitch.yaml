@@ -1,0 +1,260 @@
+# Rubrik: MediTec Teaching Case – Pitch als Voice-over-PowerPoint
+#
+# Adaptiert aus der Struktur der KI-Rubrics BWL A HS26 (ON-Case: Kriterien mit
+# drei Niveaus, typische Schwächen, Leitplanken, formale Checks). Die vier
+# Kriterien und ihre Punkte stammen aus der Aufgabenstellung (Folie 9,
+# 2026_MedTech_Case_classroom.pptx). Niveau-Deskriptoren, Punktbänder,
+# Leitplanken und Abdeckungs-Checks sind Adaptionen und zu bestätigen.
+#
+# ENTSCHEIDUNGEN DER KURSLEITUNG (2026-09-15):
+#   - Punkte werden nach Folie 9 vergeben (20 P.), Niveaus bestimmen das Punktband
+#   - Abdeckung der Aufgaben 1–3 wird berichtet, nicht bepunktet
+#   - Vortragsqualität (Tonspur) wird berichtet, nicht bepunktet
+#   - Feedbacksprache: Hochdeutsch (ß) oder Englisch, wählbar beim Upload
+
+meta:
+  course: "MediTec Teaching Case (IWI-HSG, September 2026)"
+  version: "v0.2"
+  date: "2026-09-15"
+  source_criteria: "Folie 9: Criteria for evaluating the pitch"
+  structure_adapted_from: "ki_rubrics_tp1_v2.json … tp5_v1.json (BWL A HS26)"
+  case_document: "From Products to Intelligent Services: AI-Driven Transformation of a Medical Equipment Manufacturer (Leimeister, Mai 2026)"
+  audience_of_pitch: "Michael Brandt, Eigentümer-CEO in vierter Generation"
+  task: "Pitch der besten Lösung an Michael; Format Voice-over-PowerPoint, max. 7 Minuten"
+
+language: de
+max_points: 20
+
+levels:
+  - ueberzeugend
+  - tragfaehig
+  - ansatzweise
+
+guardrails:
+  - any_recommendation_admissible_judge_reasoning_only   # Servitisierung, Single-Use, Hybrid, Partner, Verkauf: alle zulässig
+  - evidence_from_case_or_submission_required             # jede Wertung mit Beleg (Folie X, Zitat Tonspur, Fallstelle)
+  - distinguish_slides_from_spoken_track                  # Folie zeigt, Tonspur sagt; beides getrennt würdigen
+  - formal_deviations_report_only                         # Dauer, Format, KI-Offenlegung berichten, nicht still abziehen
+  - no_group_comparison
+  - no_model_solution
+  - feedback_language_standard_german_or_english
+
+formal_checks:
+  max_duration_s: 420
+  submission_format: pptx_voice_over
+  narration_expected_on_content_slides: true
+  language_of_submission: any
+  ai_disclosure: report_only
+
+criteria:
+  - id: storyline
+    name: "Stringente Storyline und Struktur"
+    max_points: 3
+    source: "Folie 9, Kriterium 1"
+    description: >
+      Führt eine Empfehlung als roter Faden durch den Pitch? Folgt die
+      Reihenfolge der Argumentation statt der Aufgabenliste? Tragen Folie und
+      Tonspur je eine Botschaft, die sich ergänzen?
+    levels:
+      ueberzeugend:
+        points: 3
+        descriptor: >
+          Eine Empfehlung ist von der ersten bis zur letzten Folie die Klammer;
+          jede Folie hat eine Botschaft, die die Tonspur entwickelt und die
+          Folie stützt; Übergänge machen Abhängigkeiten sichtbar (etwa: Daten
+          müssen existieren, bevor ein nutzungsbasierter Vertrag verkauft werden
+          kann); der Schluss kehrt zur Ausgangsfrage Michaels zurück.
+      tragfaehig:
+        points: 2
+        descriptor: >
+          Struktur erkennbar, folgt aber der Nummerierung der Aufgaben 1 bis 3;
+          die Kernbotschaft steht erst am Ende oder wird wiederholt statt
+          entwickelt; Folie und Tonspur laufen stellenweise parallel ohne
+          Bezug aufeinander.
+      ansatzweise:
+        points: 0-1
+        descriptor: >
+          Ergebnisse werden aufgezählt, ohne dass eine Empfehlung sie hält;
+          Sprünge zwischen Folien; die Tonspur liest die Folie vor oder
+          widerspricht ihr.
+    typical_weaknesses: >
+      Aufgabenreihenfolge statt Argumentationsreihenfolge; Empfehlung erst auf
+      der letzten Folie; Tonspur als Vorlesen der Folie; kein Rückbezug auf
+      Michaels Frage "Was würden Sie empfehlen?".
+
+  - id: novelty
+    name: "Neuheit und Innovationskraft der Lösung"
+    max_points: 4
+    source: "Folie 9, Kriterium 2"
+    description: >
+      Geht die Lösung über das hinaus, was der Case selbst anbietet (drei
+      Beraterempfehlungen, Marcs Drei-Stufen-Framework, digitale Zwillinge,
+      drei Agententypen)? Ist die Neuheit auf Meditec bezogen statt generisch?
+    levels:
+      ueberzeugend:
+        points: 4
+        descriptor: >
+          Die Lösung kombiniert oder überschreitet die Case-Optionen zu einem
+          eigenständigen Modell (Rolle Meditecs, Erlöslogik, Partner- oder
+          Kapitalkonstellation, Sequenzierung) und grenzt sich begründet von
+          den drei Beraterempfehlungen ab; der Mechanismus, warum das Neue
+          wirkt, ist sichtbar.
+      tragfaehig:
+        points: 2-3
+        descriptor: >
+          Eine Case-Option ist gewählt und sinnvoll ausgestaltet, bleibt aber
+          innerhalb des im Text Angelegten (Servitisierung plus Zwilling plus
+          Agenten wie von Marc beschrieben); eigene Elemente sind Details,
+          nicht Architektur.
+      ansatzweise:
+        points: 0-1
+        descriptor: >
+          Wiedergabe des Cases; Schlagworte (KI, digitaler Zwilling,
+          Plattform) ohne Mechanismus; die Lösung wäre für jeden
+          Medizintechnikhersteller gleich.
+    typical_weaknesses: >
+      Marcs Framework als eigene Idee präsentiert; Servitisierung als Reflex,
+      ohne Single-Use und Verkauf ernsthaft geprüft zu haben; Neuheit
+      behauptet statt gezeigt.
+
+  - id: creativity
+    name: "Kreativität"
+    max_points: 5
+    source: "Folie 9, Kriterium 3"
+    description: >
+      Originalität des Zugangs, der Denkfiguren und der Darstellung: eigene
+      Bilder, Perspektivwechsel, überraschende und am Fall belegbare
+      Verknüpfungen; Folien und Vortrag im Dienst der Botschaft. Abzugrenzen
+      von "novelty": dort zählt die Substanz der Lösung, hier die Art, wie
+      gedacht und gezeigt wird.
+    levels:
+      ueberzeugend:
+        points: 5
+        descriptor: >
+          Eigene Denkfiguren erschliessen den Fall neu (etwa Zeithorizonte als
+          Bewertungsachse, das Instrument als Datenquelle, Tim Hagens Alltag als
+          durchgehende Testperspektive); Bilder und Metaphern tragen Inhalt
+          statt zu dekorieren; Folien sind gestaltet, nicht befüllt; der
+          Vortrag nutzt Rhythmus, Pointen oder Zitate bewusst.
+      tragfaehig:
+        points: 3-4
+        descriptor: >
+          Einzelne originelle Elemente (ein Bild, eine ungewohnte Reihenfolge),
+          insgesamt konventionelle Beratungslogik; Folien sauber, aber
+          austauschbar.
+      ansatzweise:
+        points: 0-2
+        descriptor: >
+          Schema F: Aufzählungen, Textwände, Standardgrafiken; der Vortrag
+          fügt den Folien nichts hinzu.
+    typical_weaknesses: >
+      Kreativität als Dekoration (Stockbilder, Animationen) statt als
+      Denkleistung; Metaphern, die dem Fall widersprechen; Originalität ohne
+      Beleg.
+
+  - id: impact
+    name: "Relevanz und Business Impact für Meditec"
+    max_points: 8
+    source: "Folie 9, Kriterium 4"
+    description: >
+      Ist die Empfehlung an Meditecs konkreter Lage festgemacht und ihre
+      Wirkung hergeleitet? Werden Umsetzbarkeit für einen 450-Personen-
+      Familienbetrieb, Risiken und die Gegenseite ernst genommen? Werden Tim
+      Hagens Probleme (Kostentransparenz, manuelle Dokumentation, keine
+      Echtzeitsicht) adressiert?
+    case_anchors:
+      - "Patente der Sterilcontainer laufen in 18 Monaten aus; rund 40 % der Bruttomarge"
+      - "Umsatz 214 Mio. (2006) auf 182 Mio. USD (2024), Nettoergebnis rund 13 Mio., Bruttomarge 42 % auf 28 %"
+      - "450 Mitarbeitende, drei Standorte, Familienbesitz in vierter Generation, kein Quartalsdruck"
+      - "Verlust eines Grosskunden an Hangyong in einer Ausschreibung; EU-weite Pflichtausschreibungen"
+      - "70 bis 80 Instrumente vorbereitet, 30 bis 40 % genutzt; Sterilisation als grösstes Potenzial"
+      - "Drei Beratungen, drei Empfehlungen: Servitisierung, Premium-Single-Use, Verkauf"
+      - "Marcs drei Stufen: regelbasiert (RFID), datengetrieben (Sieboptimierung), agentisch (drei Agententypen)"
+      - "Tim Hagen: 14 OP-Säle, überlastete Aufbereitung, will Wochenplan, Engpässe, Einsatzbereitschaft wissen"
+    levels:
+      ueberzeugend:
+        points: 7-8
+        descriptor: >
+          Die Empfehlung ist an mehreren Fallgrössen festgemacht und ihre
+          Wirkung auf Umsatz, Marge oder Fähigkeiten wird mit Richtung,
+          Grössenordnung und Zeitbezug hergeleitet, nicht behauptet; die
+          Gegenseite (Single-Use, Verkauf, Partner) wird fair gewürdigt und
+          begründet verworfen oder integriert; Umsetzbarkeit (Kapital,
+          Fähigkeiten, Partner, Zeit bis zur Patentklippe) ist geprüft; Tim
+          Hagens drei Probleme finden eine konkrete Antwort; die
+          Eigentümerperspektive (Generationen, Identität) wird berücksichtigt.
+      tragfaehig:
+        points: 4-6
+        descriptor: >
+          Fallbezug vorhanden, aber Impact wird behauptet statt hergeleitet
+          (etwa "steigert die Marge" ohne Mechanismus oder Grössenordnung);
+          Alternativen nur genannt; Umsetzbarkeit nicht geprüft; Tim Hagen
+          kommt vor, aber seine Probleme werden nicht einzeln beantwortet.
+      ansatzweise:
+        points: 0-3
+        descriptor: >
+          Generische Digitalisierungs- oder Servitisierungsempfehlung; keine
+          Zahlen aus dem Fall; der Fall wäre austauschbar; Risiken fehlen.
+    typical_weaknesses: >
+      Patentklippe und Margenverfall genannt, aber nicht in die Empfehlung
+      übersetzt; Zahlen zitiert statt gerechnet; Single-Use als Strohmann;
+      Partner oder Investor ohne Aussage, was sie bringen und was sie kosten;
+      Zeithorizonte ohne Verbindung zur 18-Monats-Frist.
+
+# Abdeckung der Arbeitsaufträge. Wird berichtet, nicht bepunktet: Der Pitch
+# präsentiert die beste Lösung, nicht alle Teilaufgaben. Fehlende Teile fliessen
+# nur ein, wenn sie für Kriterium D (Impact) fehlen.
+coverage:
+  - id: a1a
+    label: "Aufgabe 1a: Michaels Optionen benannt und verglichen"
+  - id: a1b
+    label: "Aufgabe 1b: Empfehlung in drei Zeithorizonten (0–12 Monate, 1–3 Jahre, 3–5 Jahre / 2032) inkl. aufzubauender Fähigkeiten"
+  - id: a2a
+    label: "Aufgabe 2a: Position heute und Ziel auf dem Produkt-Service-Spektrum, Skizze des neuen Geschäftsmodells"
+  - id: a2b
+    label: "Aufgabe 2b: Digitaler Zwilling – welche Daten, welche neuen Geschäftsmodelle, wie verändert er die Beziehung Meditec–Klinik, Bezug zu Tim Hagens drei Problemen"
+  - id: a3a
+    label: "Aufgabe 3a: Drei konkrete Prozessschritte im Aufbereitungskreislauf mit KI-Mehrwert"
+  - id: a3b
+    label: "Aufgabe 3b: Weitere KI-Anwendungsfälle identifiziert, priorisiert, Wirkung beschrieben"
+  - id: a3c
+    label: "Aufgabe 3c: Test des Customer Agent aus Sicht Tim Hagen – wo scheitert er, welche Daten/Systeme fehlen, wie weiterentwickeln"
+
+# Vortragsqualität der Tonspur. Wird berichtet, nicht bepunktet (Kursleitung
+# entscheidet, ob es in "storyline" oder "creativity" einfliesst).
+delivery_aspects:
+  - id: pace
+    label: "Sprechtempo und Pausen (Richtwert 120–160 Wörter/min bei gesprochener Sprache)"
+  - id: clarity
+    label: "Verständlichkeit, Satzbau, Fachbegriffe erklärt"
+  - id: slide_voice_fit
+    label: "Verhältnis Folie–Tonspur: ergänzt die Tonspur die Folie oder liest sie vor?"
+  - id: duration
+    label: "Dauer gegenüber der 7-Minuten-Vorgabe"
+  - id: authenticity
+    label: "Hinweise auf synthetische Stimme oder abgelesenen Text (nur berichten)"
+
+# Kalibrierungsanker (kurz; keine konstruierten Vollabgaben wie in BWL A).
+calibration:
+  ueberzeugend: >
+    Eine Empfehlung trägt den Pitch; die Zeithorizonte folgen einer Logik
+    (erst Daten, dann Erlösmodell, dann Rolle); Zahlen werden gerechnet, nicht
+    zitiert; Single-Use und Verkauf werden ernsthaft geprüft; Tim Hagens drei
+    Probleme bekommen je eine Antwort; der Agententest liefert einen
+    präzisen Befund statt einer Liste.
+  tragfaehig: >
+    Servitisierung mit digitalem Zwilling und Agenten wie im Case, sauber
+    gegliedert nach Aufgaben; Fallzahlen genannt; Alternativen in einem Satz
+    abgetan; Impact als Behauptung; solide, aber vorhersehbar.
+  ansatzweise: >
+    Nacherzählung des Cases; Buzzwords; keine Entscheidung oder alle Optionen
+    gleichzeitig; keine Zahlen; Folien als Textwände, Tonspur liest vor.
+
+outputs:
+  feedback:
+    audience: "Studierende (Gruppe) und Kursleitung"
+    per_criterion:
+      - was_traegt
+      - was_bleibt_duenn_mit_kriterienbezug
+      - naechster_schritt
+    closing: "Gesamturteil mit Punkten, Abdeckung der Aufgaben, formale Hinweise"

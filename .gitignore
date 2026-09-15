@@ -1,0 +1,32 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.pyc
+.venv/
+backend/.venv/
+backend/data/
+
+# node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# os / editor
+.DS_Store
+.vscode/
+
+# submissions are personal data – never commit
+input/submission/*
+!input/submission/.gitkeep
+output/
+
+# teaching material binaries (case PDF, classroom deck): too large / not for redistribution.
+# The extracted text lives in backend/app/rubrics/.
+input/task/*
+!input/task/.gitkeep
