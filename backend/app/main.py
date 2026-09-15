@@ -31,10 +31,37 @@ MEDIA = {
 }
 
 
+_key_check: dict = {"at": 0.0, "result": None}
+
+
+def _mistral_key_status() -> dict:
+    """Ask Mistral whether the configured key works (cached for 60 s)."""
+    import time
+    if time.time() - _key_check["at"] < 60 and _key_check["result"] is not None:
+        return _key_check["result"]
+    result: dict
+    if not settings.mistral_api_key:
+        result = {"valid": False, "detail": "MISTRAL_API_KEY not set"}
+    else:
+        try:
+            from mistralai.client import Mistral
+            models = Mistral(api_key=settings.mistral_api_key, server=settings.mistral_server).models.list()
+            ids = {m.id for m in (models.data or [])}
+            result = {"valid": True, "grader_model_available": settings.mistral_model in ids,
+                      "transcribe_model_available": settings.mistral_transcribe_model in ids}
+        except Exception as e:  # noqa: BLE001
+            result = {"valid": False, "detail": str(e)[:200]}
+    _key_check.update(at=time.time(), result=result)
+    return result
+
+
 @app.get("/api/health")
 def health() -> dict:
     return {"ok": True, "model": settings.mistral_model, "transcriber": settings.transcriber,
             "transcribe_model": settings.mistral_transcribe_model,
+            "server": settings.mistral_server,
+            "key_length": len(settings.mistral_api_key),
+            "mistral": _mistral_key_status(),
             "report_retention_hours": settings.report_retention_hours}
 
 

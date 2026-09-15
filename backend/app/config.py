@@ -9,7 +9,7 @@ class Settings(BaseSettings):
 
     # --- Mistral (grading + transcription) ---
     mistral_api_key: str = ""
-    mistral_server: str = "eu"  # eu | global | us
+    mistral_server: str = "global"  # global (api.mistral.ai) | eu | us
     mistral_model: str = "mistral-large-latest"
     mistral_transcribe_model: str = "voxtral-mini-latest"
     transcribe_language: str = ""  # "" = auto-detect, else e.g. "de"
