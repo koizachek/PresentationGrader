@@ -162,8 +162,32 @@ def render_slides(pptx: Path, out_dir: Path, dpi: int = 72) -> list[Path]:
     return sorted(out_dir.glob("slide-*.png"))
 
 
+def repair_zip(pptx: Path, work_dir: Path) -> Path:
+    """Rewrite the PPTX if any entry has a bad CRC (PowerPoint/cloud-sync artefact).
+
+    Entries are copied with CRC verification disabled; the payload is usually intact.
+    Returns the original path when the archive is sound."""
+    import zipfile
+
+    try:
+        with zipfile.ZipFile(pptx) as zf:
+            if zf.testzip() is None:
+                return pptx
+    except zipfile.BadZipFile:
+        pass
+    fixed = work_dir / "submission_repaired.pptx"
+    with zipfile.ZipFile(pptx) as zin, zipfile.ZipFile(fixed, "w", zipfile.ZIP_DEFLATED) as zout:
+        for info in zin.infolist():
+            with zin.open(info) as f:
+                f._expected_crc = None  # skip CRC check; take the bytes as stored
+                data = f.read()
+            zout.writestr(info.filename, data)
+    return fixed
+
+
 def parse_pptx(pptx: Path, work_dir: Path, render: bool = True) -> Deck:
     work_dir.mkdir(parents=True, exist_ok=True)
+    pptx = repair_zip(pptx, work_dir)
     prs = Presentation(str(pptx))
     deck = Deck(source=pptx, work_dir=work_dir)
 
